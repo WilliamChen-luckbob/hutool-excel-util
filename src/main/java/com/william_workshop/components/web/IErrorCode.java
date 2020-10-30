@@ -1,4 +1,4 @@
-package com.william_workshop.components;
+package com.william_workshop.components.web;
 
 /**
  * 封装API的错误码

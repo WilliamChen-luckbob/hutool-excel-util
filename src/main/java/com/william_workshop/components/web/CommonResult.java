@@ -1,4 +1,4 @@
-package com.william_workshop.components;
+package com.william_workshop.components.web;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;

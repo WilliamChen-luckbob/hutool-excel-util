@@ -6,11 +6,10 @@ import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
 import com.william_workshop.annotations.ColProperties;
 import com.william_workshop.annotations.NotDuplicate;
-import com.william_workshop.components.Check4List;
-import com.william_workshop.components.ExcelPageBase;
-import com.william_workshop.components.ResultEnum;
-import com.william_workshop.components.SheetDTO;
-import com.william_workshop.exception.Asserts;
+import com.william_workshop.components.excel.Check4List;
+import com.william_workshop.components.excel.ExcelPageBase;
+import com.william_workshop.components.excel.SheetDTO;
+import com.william_workshop.exception.ExcelProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -59,7 +58,7 @@ public class ExcelUtils {
         List<T> excelInfo = getExcelInfo(file, clz, sheetIndex);
         String errorStr = Check4List.getNullOrDuplicateErrorString(excelInfo);
         if (!errorStr.isEmpty()) {
-            Asserts.fail(ResultEnum.PARAM_ERROR, errorStr);
+            throw new ExcelProcessingException(errorStr);
         }
         return excelInfo;
     }
@@ -85,8 +84,142 @@ public class ExcelUtils {
         }
     }
 
-
+    /**
+     * 通过预定义的实体类获取excel数据
+     *
+     * @param file
+     * @param parent
+     * @param sheetIndex
+     * @param <T>
+     * @return
+     */
     public static <T extends ExcelPageBase> List<T> getCustomizedExcelInfo(MultipartFile file, T parent, Integer sheetIndex) {
+        return doGetCustomizedExcelInfo(file, parent, sheetIndex);
+    }
+
+
+    /**
+     * 输出单页带数据的表格：数据不能为空
+     *
+     * @param fileName
+     * @param rows
+     * @param response
+     * @param <T>
+     */
+    public static <T> void exportSinglePageExcel(@NonNull String fileName, List<T> rows, HttpServletResponse response) {
+        OutputStream outputStream = null;
+        try {
+            outputStream = response.getOutputStream();
+            fileName = fileName + ".xls";
+            response.setHeader("Content-disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
+            response.setContentType("application/vnd.ms-excel;charset=UTF-8");// 定义输出类型
+            ExcelWriter bigWriter = ExcelUtil.getBigWriter();
+            //标题获取
+            if (rows == null || rows.isEmpty()) {
+                return;
+            }
+            //装载标题
+            T t = rows.get(0);
+            Class<?> clz = t.getClass();
+            Field[] fields = clz.getDeclaredFields();
+            List<String> titleName = new ArrayList<>();
+            for (Field field : fields) {
+                titleName.add(field.getName());
+                bigWriter.addHeaderAlias(field.getName(), field.getName());
+            }
+            //标题写入
+            bigWriter.writeHeadRow(titleName);
+            //数据写入
+            bigWriter.write(rows);
+//            bigWriter.autoSizeColumnAll();
+            bigWriter.flush(outputStream);
+            bigWriter.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    log.error("关闭导出excel流异常:{}", e, e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * 输出单页空表格模板,不带数据
+     *
+     * @param
+     * @param response
+     * @param <T>
+     */
+    public static <T> void exportSinglePageExcel(String fileName, Class<T> clz, HttpServletResponse response) {
+        OutputStream outputStream = null;
+        try {
+            outputStream = response.getOutputStream();
+            fileName = fileName + ".xls";
+            response.setHeader("Content-disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
+            response.setContentType("application/vnd.ms-excel;charset=UTF-8");// 定义输出类型
+            ExcelWriter bigWriter = ExcelUtil.getBigWriter();
+            //装载标题
+            T t = clz.newInstance();
+            Field[] fields = clz.getDeclaredFields();
+            List<String> titleName = new ArrayList<>();
+            for (Field field : fields) {
+                titleName.add(field.getName());
+                bigWriter.addHeaderAlias(field.getName(), field.getName());
+            }
+            //标题写入
+            bigWriter.writeHeadRow(titleName);
+            bigWriter.flush(outputStream);
+            bigWriter.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    log.error("关闭导出excel流异常:{}", e, e.getMessage());
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 导出简单的多页excel
+     * <br> 工具将直接根据列表中的实体类的属性写出数据
+     * <br> 输出的excel与实体类列表一致
+     *
+     * @param sheets   多页excel实体列表
+     * @param fileName excel文件名
+     * @param response httpServeletResponse 对象
+     * @param <T>
+     */
+    public static <T> void exportSimpleMultiPageExcel(List<SheetDTO> sheets, String fileName, HttpServletResponse response) {
+        doExportMultiPageExcel(sheets, fileName, response, true);
+    }
+
+
+    /**
+     * 导出复杂的多页excel
+     * <b>注意！使用此方法时，SheetDTO 中的实体一定要使用 ColProperty 注解</b>
+     * <br> 工具将直接根据列表中的实体类的属性写出数据
+     * <br> 输出的excel与实体类列表一致
+     *
+     * @param sheets   多页excel实体列表
+     * @param fileName excel文件名
+     * @param response httpServeletResponse 对象
+     * @param <T>
+     */
+    public static <T> void exportCustomizedMultiPageExcel(List<SheetDTO> sheets, String fileName, HttpServletResponse response) {
+        doExportMultiPageExcel(sheets, fileName, response, false);
+    }
+
+
+    private static <T extends ExcelPageBase> List<T> doGetCustomizedExcelInfo(MultipartFile file, T parent, Integer sheetIndex) {
         try {
             //直接读出数据，等待处理
             ExcelReader reader = ExcelUtil.getReader(file.getInputStream(), sheetIndex);
@@ -165,43 +298,19 @@ public class ExcelUtils {
             log.error(e.getMessage());
         }
         return null;
-
-    }
-
-    /**
-     * 导出简单的多页excel
-     * <br> 工具将直接根据列表中的实体类的属性写出数据
-     * <br> 输出的excel与实体类列表一致
-     *
-     * @param sheets   多页excel实体列表
-     * @param fileName excel文件名
-     * @param response httpServeletResponse 对象
-     * @param <T>
-     */
-    public static <T> void exportSimpleMultiPageExcel(List<SheetDTO> sheets, String fileName, HttpServletResponse response) {
-        doExportMultiPageExcel(sheets, fileName, response, true);
-    }
-
-
-    /**
-     * 导出复杂的多页excel
-     * <b>注意！使用此方法时，SheetDTO 中的实体一定要使用 ColProperty 注解</b>
-     * <br> 工具将直接根据列表中的实体类的属性写出数据
-     * <br> 输出的excel与实体类列表一致
-     *
-     * @param sheets   多页excel实体列表
-     * @param fileName excel文件名
-     * @param response httpServeletResponse 对象
-     * @param <T>
-     */
-    public static <T> void exportCustomizedMultiPageExcel(List<SheetDTO> sheets, String fileName, HttpServletResponse response) {
-        doExportMultiPageExcel(sheets, fileName, response, false);
     }
 
 
     private static <T> List<T> doGetClassicExcelInfo(MultipartFile file, Class<T> clz, Integer sheetIndex) {
-        //todo 带起始位置并且有备注名的数据读取
-        return null;
+        ExcelPageBase pageBase = null;
+        try {
+            pageBase = (ExcelPageBase) clz.newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return (List<T>) doGetCustomizedExcelInfo(file, pageBase, sheetIndex);
     }
 
 
@@ -336,95 +445,6 @@ public class ExcelUtils {
 //        }
 //    }
 
-    /**
-     * 输出单页带数据的表格：数据不能为空
-     *
-     * @param fileName
-     * @param rows
-     * @param response
-     * @param <T>
-     */
-    public static <T> void exportSinglePageExcel(@NonNull String fileName, List<T> rows, HttpServletResponse response) {
-        OutputStream outputStream = null;
-        try {
-            outputStream = response.getOutputStream();
-            fileName = fileName + ".xls";
-            response.setHeader("Content-disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
-            response.setContentType("application/vnd.ms-excel;charset=UTF-8");// 定义输出类型
-            ExcelWriter bigWriter = ExcelUtil.getBigWriter();
-            //标题获取
-            if (rows == null || rows.isEmpty()) {
-                return;
-            }
-            //装载标题
-            T t = rows.get(0);
-            Class<?> clz = t.getClass();
-            Field[] fields = clz.getDeclaredFields();
-            List<String> titleName = new ArrayList<>();
-            for (Field field : fields) {
-                titleName.add(field.getName());
-                bigWriter.addHeaderAlias(field.getName(), field.getName());
-            }
-            //标题写入
-            bigWriter.writeHeadRow(titleName);
-            //数据写入
-            bigWriter.write(rows);
-//            bigWriter.autoSizeColumnAll();
-            bigWriter.flush(outputStream);
-            bigWriter.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    log.error("关闭导出excel流异常:{}", e, e.getMessage());
-                }
-            }
-        }
-    }
-
-    /**
-     * 输出单页空表格模板,不带数据
-     *
-     * @param
-     * @param response
-     * @param <T>
-     */
-    public static <T> void exportSinglePageExcel(String fileName, Class<T> clz, HttpServletResponse response) {
-        OutputStream outputStream = null;
-        try {
-            outputStream = response.getOutputStream();
-            fileName = fileName + ".xls";
-            response.setHeader("Content-disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
-            response.setContentType("application/vnd.ms-excel;charset=UTF-8");// 定义输出类型
-            ExcelWriter bigWriter = ExcelUtil.getBigWriter();
-            //装载标题
-            T t = clz.newInstance();
-            Field[] fields = clz.getDeclaredFields();
-            List<String> titleName = new ArrayList<>();
-            for (Field field : fields) {
-                titleName.add(field.getName());
-                bigWriter.addHeaderAlias(field.getName(), field.getName());
-            }
-            //标题写入
-            bigWriter.writeHeadRow(titleName);
-            bigWriter.flush(outputStream);
-            bigWriter.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    log.error("关闭导出excel流异常:{}", e, e.getMessage());
-                }
-            }
-        }
-    }
-
 
     private static <T> void doExportMultiPageExcel(List<SheetDTO> sheets, String fileName, HttpServletResponse response, Boolean isSimplified) {
         OutputStream outputStream = null;
@@ -443,16 +463,18 @@ public class ExcelUtils {
             return;
         }
         ExcelWriter bigWriter = ExcelUtil.getBigWriter();
+        List<Integer> colCountList = new ArrayList<>();
 
         for (int i = 0; i < sheets.size(); i++) {
+
             SheetDTO sheet = sheets.get(i);
             if (i == 0) {
                 bigWriter.renameSheet(0, sheet.getSheetName());
             } else {
                 bigWriter.setSheet(sheet.getSheetName());
             }
-            //装载字段名和别名
-            loadHeadlerAloasWhileExport(bigWriter, sheet, isSimplified);
+            //装载字段名和别名以及字段数量（后面全部自动化列宽的时候会用到）
+            colCountList.add(loadHeadlerAloasWhileExport(bigWriter, sheet, isSimplified));
 
             //只写出有名字的列
             bigWriter.setOnlyAlias(true);
@@ -467,11 +489,10 @@ public class ExcelUtils {
 
 
         List<Sheet> currentSheets = bigWriter.getSheets();
-        for (Sheet currentSheetOrigin : currentSheets) {
-            SXSSFSheet currentSheet = (SXSSFSheet) currentSheetOrigin;
+        for (int i = 0; i < currentSheets.size(); i++) {
+            SXSSFSheet currentSheet = (SXSSFSheet) currentSheets.get(i);
             currentSheet.trackAllColumnsForAutoSizing();
-            int columnCount = bigWriter.getColumnCount();
-            for (int j = 0; j < columnCount; j++) {
+            for (int j = 0; j < colCountList.get(i) - 1; j++) {
                 // 调整每一列宽度
                 currentSheet.autoSizeColumn((short) j);
                 // 解决自动设置列宽中文失效的问题
@@ -496,8 +517,9 @@ public class ExcelUtils {
      * @param isSimplified 是否是简单模式，简单模式是直接输出字段，没有别名
      * @param <T>          当前sheet页的实体泛型
      */
-    private static <T> void loadHeadlerAloasWhileExport(ExcelWriter bigWriter, SheetDTO sheet, Boolean isSimplified) {
+    private static <T> Integer loadHeadlerAloasWhileExport(ExcelWriter bigWriter, SheetDTO sheet, Boolean isSimplified) {
 
+        Integer colCount = 0;
         Class<T> clz = sheet.getClz();
         Field[] fields = clz.getDeclaredFields();
         List<String> titleName = new ArrayList<>();
@@ -515,8 +537,10 @@ public class ExcelUtils {
                 } else {
                     bigWriter.addHeaderAlias(field.getName(), field.getName());
                 }
+                colCount++;
             }
         }
+        return colCount;
     }
 
 

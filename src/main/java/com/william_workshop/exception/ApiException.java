@@ -1,7 +1,7 @@
 package com.william_workshop.exception;
 
 
-import com.william_workshop.components.IErrorCode;
+import com.william_workshop.components.web.IErrorCode;
 import lombok.Getter;
 
 /**

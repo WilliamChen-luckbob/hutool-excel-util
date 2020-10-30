@@ -1,7 +1,7 @@
 package com.william_workshop.exception;
 
-import com.william_workshop.components.CommonResult;
-import com.william_workshop.components.ResultEnum;
+import com.william_workshop.components.web.CommonResult;
+import com.william_workshop.components.web.ResultEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +25,13 @@ public class GlobalExceptionHandler {
     @ResponseBody
     @ExceptionHandler(value = ApiResultException.class)
     public CommonResult handle2(ApiResultException e) {
+        log.error((e.getMessage()));
+        return CommonResult.error(e.getCode(), e.getMessage());
+    }
+
+    @ResponseBody
+    @ExceptionHandler(value = ExcelProcessingException.class)
+    public CommonResult handleExcelException(ExcelProcessingException e) {
         log.error((e.getMessage()));
         return CommonResult.error(e.getCode(), e.getMessage());
     }
