@@ -25,10 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -110,9 +107,9 @@ public class ExcelUtils {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
-            fileName = fileName + ".xls";
-            response.setHeader("Content-disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
-            response.setContentType("application/vnd.ms-excel;charset=UTF-8");// 定义输出类型
+            fileName = URLEncoder.encode(fileName,"UTF-8") + ".xls";
+            response.setContentType("application/vnd.ms-excel;charset=utf-8");
+            response.setHeader("Content-Disposition","attachment;filename*=utf-8''"+fileName);
             ExcelWriter bigWriter = ExcelUtil.getBigWriter();
             //标题获取
             if (rows == null || rows.isEmpty()) {
@@ -158,9 +155,11 @@ public class ExcelUtils {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
-            fileName = fileName + ".xls";
-            response.setHeader("Content-disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
-            response.setContentType("application/vnd.ms-excel;charset=UTF-8");// 定义输出类型
+            fileName = URLEncoder.encode(fileName,"UTF-8") + ".xls";
+            response.setContentType("application/vnd.ms-excel;charset=utf-8");
+            response.setHeader("Content-Disposition","attachment;filename*=utf-8''"+fileName);
+
+
             ExcelWriter bigWriter = ExcelUtil.getBigWriter();
             //装载标题
             T t = clz.newInstance();
@@ -450,9 +449,9 @@ public class ExcelUtils {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
-            fileName = fileName + ".xls";
-            response.setHeader("Content-disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
-            response.setContentType("application/vnd.ms-excel;charset=UTF-8");// 定义输出类型
+            fileName = URLEncoder.encode(fileName,"UTF-8") + ".xls";
+            response.setContentType("application/vnd.ms-excel;charset=utf-8");
+            response.setHeader("Content-Disposition","attachment;filename*=utf-8''"+fileName);
         } catch (IOException e) {
             e.printStackTrace();
         }

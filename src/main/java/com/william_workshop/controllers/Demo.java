@@ -51,7 +51,7 @@ public class Demo {
      * @return
      */
     @ApiOperation(value = "简单读取excel并校验是否有重复")
-    @RequestMapping(method = RequestMethod.POST, value = "/simple/read")
+    @RequestMapping(method = RequestMethod.POST, value = "/simple/read/check")
     public CommonResult readFileAndCheck(@RequestPart(name = "file") MultipartFile file) {
         //第一个参数为excel文件，第二个为接收数据的实体类，第三个为读取excel的第几个sheet
         List<SimplifiedExcelReadTestForm> excelInfo = ExcelUtils.getExcelInfoThenCheck(file, SimplifiedExcelReadTestForm.class, 0);
@@ -63,8 +63,8 @@ public class Demo {
      * @param response
      */
     @ApiOperation(value = "简单导出excel,带数据")
-    @RequestMapping(method = RequestMethod.POST, value = "/simple/export")
-    public void exportSimpleFileWithData(HttpServletResponse response) {
+    @RequestMapping(method = RequestMethod.POST, value = "/simple/export/data")
+    public void exportSimpFileWithData(HttpServletResponse response) {
         List<SimplifiedExcelReadTestForm> excelInfo = new ArrayList();
         for (int i = 0; i < 10; i++) {
             SimplifiedExcelReadTestForm info = new SimplifiedExcelReadTestForm(i, "奇奇怪怪的名字" + i, "奇奇怪怪的数据" + i);
@@ -78,8 +78,8 @@ public class Demo {
      * @param response
      */
     @ApiOperation(value = "简单导出excel,不带数据")
-    @RequestMapping(method = RequestMethod.POST, value = "/simple/export")
-    public void exportSimpleFileWithoutData(HttpServletResponse response) {
+    @RequestMapping(method = RequestMethod.POST, value = "/simple/export/nodata")
+    public void exportSimpFileWithoutData(HttpServletResponse response) {
         ExcelUtils.exportSinglePageExcelWithoutData("奇奇怪怪的文件名", SimplifiedExcelReadTestForm.class, response);
     }
 
