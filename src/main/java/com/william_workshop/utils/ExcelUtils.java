@@ -106,7 +106,7 @@ public class ExcelUtils {
      * @param response
      * @param <T>
      */
-    public static <T> void exportSinglePageExcel(@NonNull String fileName, List<T> rows, HttpServletResponse response) {
+    public static <T> void exportSinglePageExcelWithData(@NonNull String fileName, List<T> rows, HttpServletResponse response) {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
@@ -154,7 +154,7 @@ public class ExcelUtils {
      * @param response
      * @param <T>
      */
-    public static <T> void exportSinglePageExcel(String fileName, Class<T> clz, HttpServletResponse response) {
+    public static <T> void exportSinglePageExcelWithoutData(String fileName, Class<T> clz, HttpServletResponse response) {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
