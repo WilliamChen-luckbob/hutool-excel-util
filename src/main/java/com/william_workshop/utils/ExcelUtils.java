@@ -107,9 +107,9 @@ public class ExcelUtils {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
-            fileName = URLEncoder.encode(fileName,"UTF-8") + ".xls";
+            fileName = URLEncoder.encode(fileName, "UTF-8") + ".xls";
             response.setContentType("application/vnd.ms-excel;charset=utf-8");
-            response.setHeader("Content-Disposition","attachment;filename*=utf-8''"+fileName);
+            response.setHeader("Content-Disposition", "attachment;filename*=utf-8''" + fileName);
             ExcelWriter bigWriter = ExcelUtil.getBigWriter();
             //标题获取
             if (rows == null || rows.isEmpty()) {
@@ -155,9 +155,9 @@ public class ExcelUtils {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
-            fileName = URLEncoder.encode(fileName,"UTF-8") + ".xls";
+            fileName = URLEncoder.encode(fileName, "UTF-8") + ".xls";
             response.setContentType("application/vnd.ms-excel;charset=utf-8");
-            response.setHeader("Content-Disposition","attachment;filename*=utf-8''"+fileName);
+            response.setHeader("Content-Disposition", "attachment;filename*=utf-8''" + fileName);
 
 
             ExcelWriter bigWriter = ExcelUtil.getBigWriter();
@@ -339,13 +339,13 @@ public class ExcelUtils {
             }).collect(Collectors.toList());
 
             //返回数据类泛型的新实例，并获取对应的属性列表
-            T result = clz.newInstance();
             Field[] declaredFields = clz.getDeclaredFields();
 
             //将读出的excel数据装载为实体列表
             List<T> results = new ArrayList<>();
             //遍历行
             for (int i = 1; i < readResult.size(); i++) {
+                T result = clz.newInstance();
                 //遍历列
                 for (int j = 0; j < names.size(); j++) {
                     //当前列名
@@ -449,9 +449,9 @@ public class ExcelUtils {
         OutputStream outputStream = null;
         try {
             outputStream = response.getOutputStream();
-            fileName = URLEncoder.encode(fileName,"UTF-8") + ".xls";
+            fileName = URLEncoder.encode(fileName, "UTF-8") + ".xls";
             response.setContentType("application/vnd.ms-excel;charset=utf-8");
-            response.setHeader("Content-Disposition","attachment;filename*=utf-8''"+fileName);
+            response.setHeader("Content-Disposition", "attachment;filename*=utf-8''" + fileName);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -522,9 +522,13 @@ public class ExcelUtils {
         Class<T> clz = sheet.getClz();
         Field[] fields = clz.getDeclaredFields();
         List<String> titleName = new ArrayList<>();
+        List<String> simplifiedTitle = new ArrayList<>();
+
         for (Field field : fields) {
             if (isSimplified) {
                 bigWriter.addHeaderAlias(field.getName(), field.getName());
+                simplifiedTitle.add(field.getName());
+                colCount++;
                 continue;
             }
             ColProperties colProperties = field.getAnnotation(ColProperties.class);
@@ -538,6 +542,9 @@ public class ExcelUtils {
                 }
                 colCount++;
             }
+        }
+        if (isSimplified && CollectionUtil.isNotEmpty(simplifiedTitle)) {
+            bigWriter.writeHeadRow(simplifiedTitle);
         }
         return colCount;
     }

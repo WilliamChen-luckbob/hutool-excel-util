@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class Demo {
     /**
      * 测试swagger连接正常
+     *
      * @return
      */
     @ApiOperation(value = "测试swagger正常")
@@ -34,6 +36,7 @@ public class Demo {
 
     /**
      * 简单读取excel，excel字段名必须和实体一一对应
+     *
      * @param file
      * @return
      */
@@ -47,6 +50,7 @@ public class Demo {
 
     /**
      * 简单读取excel，如果报错，将会返回具体的报错数据，excel字段名必须和实体一一对应
+     *
      * @param file
      * @return
      */
@@ -60,6 +64,7 @@ public class Demo {
 
     /**
      * 将实体直接导出为excel
+     *
      * @param response
      */
     @ApiOperation(value = "简单导出excel,带数据")
@@ -75,6 +80,7 @@ public class Demo {
 
     /**
      * 直接返回一个空表
+     *
      * @param response
      */
     @ApiOperation(value = "简单导出excel,不带数据")
@@ -85,6 +91,7 @@ public class Demo {
 
     /**
      * 综合应用：根据定制的实体，从excel中抓出想要的数据，并输出成指定的excel样式
+     *
      * @param file
      * @param response
      */
